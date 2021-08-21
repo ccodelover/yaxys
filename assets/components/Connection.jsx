@@ -186,7 +186,10 @@ export default class Connection extends Component {
       t,
 		} = this.props
 		const relatedSchema = constants.schemas[relatedIdentity?.toLowerCase()]
-
+		if(related) {
+			console.log(related.error)
+			console.log(related.data)
+		}
 		return (
 			<Loader item={related}>
 				<Button

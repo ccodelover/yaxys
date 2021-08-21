@@ -156,6 +156,9 @@ module.exports = {
           case "offset":
             options[k] = v
             break
+          case "filter":
+            filter.search = v
+            break
           case "populate":
             options.populate = v.split(",")
             break
@@ -164,7 +167,7 @@ module.exports = {
             break
         }
       })
-
+      
       ctx.set("meta", JSON.stringify({ total: await yaxys.db.count(null, identity, filter) }))
       ctx.body = await yaxys.db.find(null, identity, filter, options)
     }
@@ -230,8 +233,12 @@ module.exports = {
       const options = {
         populate: ctx.query.populate && ctx.query.populate.split(","),
       }
-
-      ctx.body = await yaxys.db.knex.transaction(trx => yaxys.db.insert(trx, identity, ctx.request.body, options))
+      try {
+        ctx.body = await yaxys.db.knex.transaction(trx => yaxys.db.insert(trx, identity, ctx.request.body, options))
+      } catch (error) {
+        ctx.status = 400
+        ctx.body = {error: error.message}
+      }
     }
   },
 }

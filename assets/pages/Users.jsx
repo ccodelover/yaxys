@@ -5,9 +5,11 @@ import { connect } from "react-redux"
 
 import Paper from "@material-ui/core/Paper"
 import Button from "@material-ui/core/Button"
+import TextField from '@material-ui/core/TextField'
 
 import YaxysClue, { queries } from "../services/YaxysClue"
 import { withConstants } from "../services/Utils"
+import queryString from "query-string"
 
 import Wrapper from "../components/Wrapper.jsx"
 import Created from "../components/Created.jsx"
@@ -107,13 +109,25 @@ export default class Users extends Component {
           {t("USERS_PAGE.PROFILES_DESC")}
           <Link to={"/user-profiles"}>{t("USERS_PAGE.PROFILES_DESC_LINK")}</Link>
         </p>
-        <Button
-          variant="text"
-          color="secondary"
-          onClick={this.onAdd}
-        >
-          { `${t("CREATE")} ${t("USER", { "context": "ACCUSATIVE" })}`}
-        </Button>
+        <div style={{display:'flex', justifyContent:'space-between'}}>
+          <Button
+            variant="text"
+            color="secondary"
+            onClick={this.onAdd}
+          >
+            { `${t("CREATE")} ${t("USER", { "context": "ACCUSATIVE" })}`}
+          </Button>
+          <TextField
+            label="Search"
+            id="outlined-margin-dense"
+            helperText=""
+            margin="dense"
+            defaultValue={queryString.parse(this.props.history.location.search)?.filter}
+            variant="outlined"
+            type="search"
+            onChange={(e)=>this.props.history.push({ search: `filter=${e.target.value}` })}
+          />
+        </div>
         <Created
           items={this.props.createdUsers}
           content={user => `#${user.id} ${user.name}`}
@@ -135,6 +149,7 @@ export default class Users extends Component {
             onDelete={this.onDeleteItem}
             deletedHash={ this.state.deletedHash }
             deletedKey="id"
+            searchFields={['name']}
           />
         </Paper>
         <br />

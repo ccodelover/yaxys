@@ -191,25 +191,27 @@ module.exports = class Adapter {
     }
 
     await this.emitter.emit(`${identity}:create:before`, trx, fixedData)
-
-    const insert = this.knex(identity)
-      .insert(fixedData)
-      .returning("*")
-    const result = trx ? await insert.transacting(trx) : await insert
-    const item = result[0]
-    await this.emitter.emit(`${identity}:create:after`, trx, item)
-
-    if (options && options.populate) {
-      const propertiesToPopulate = Array.isArray(options.populate)
-        ? options.populate
-        : [options.populate]
-
-      for (let property of propertiesToPopulate) {
-        await this._populate(identity, [item], property, trx)
+    try {
+      const insert = this.knex(identity)
+        .insert(fixedData)
+        .returning("*")
+      const result = trx ? await insert.transacting(trx) : await insert
+      const item = result[0]
+      await this.emitter.emit(`${identity}:create:after`, trx, item)
+  
+      if (options && options.populate) {
+        const propertiesToPopulate = Array.isArray(options.populate)
+          ? options.populate
+          : [options.populate]
+  
+        for (let property of propertiesToPopulate) {
+          await this._populate(identity, [item], property, trx)
+        }
       }
+      return item
+    } catch (error) {
+      throw new Error(error.detail);
     }
-
-    return item
   }
 
   /**
@@ -322,6 +324,17 @@ module.exports = class Adapter {
     let query = initialQuery
     const simpleWhere = {}
     _.each(filter, (value, key) => {
+      if(key === 'search') {
+        const fd = JSON.parse(value).filterValue;
+        _.each(JSON.parse(value).filterKeys, (v, k) => {
+          if(k === 0) {
+            query.where(v, 'like', `%${fd}%`)
+            return
+          }
+          query.orWhere(v, 'like', `%${fd}%`)
+        })
+        return
+      }
       const property = schema.properties[key]
       if (Array.isArray(value) && property.type !== "array") {
         query = query.andWhere(key, "in", value)

@@ -18,6 +18,9 @@ module.exports = {
     timestamps: true,
     webhook: true,
     defaultProperties: ["id", "user", "code", "note"],
+    uniqueKeys: {
+      integrity: ["code"],
+    },
     properties: {
       id: {
         type: "integer",

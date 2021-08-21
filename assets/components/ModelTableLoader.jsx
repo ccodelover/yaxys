@@ -28,6 +28,7 @@ export default class ModelTableLoader extends Component {
     url: PropTypes.oneOfType([PropTypes.string, PropTypes.func]),
     onDelete: PropTypes.func,
     deletedHash: PropTypes.object,
+    searchFields: PropTypes.object,
     deletedKey: PropTypes.string,
   }
 
@@ -37,9 +38,11 @@ export default class ModelTableLoader extends Component {
 
   render() {
     const page = queryString.parse(this.props.history.location.search)?.page - 1 || 0
+    const keyword = queryString.parse(this.props.history.location.search)?.filter
     return (
       <ModelTableLoaderPage
         page={page}
+        keyword={keyword}
         onChangePage={this.onChangePage}
         limit={this.props.limit || this.props.constants.settings.paginationLimit}
         {...omit(this.props, "limit", "staticContext")}
@@ -54,6 +57,7 @@ const modelClue = props => ({
   sort: { id: 1 },
   limit: props.limit,
   skip: props.page * props.limit,
+  filter: props.filter,
   ...props.additionalClueProperties,
 })
 const modelSelector = YaxysClue.selectors.byClue(modelClue)
@@ -83,16 +87,21 @@ class ModelTableLoaderPage extends Component {
     deletedHash: PropTypes.object,
     deletedKey: PropTypes.string,
     page: PropTypes.number,
+    searchFields: PropTypes.object,
+    keyword: PropTypes.string,
     onChangePage: PropTypes.func,
   }
 
   componentDidMount() {
-    this.props.loadModels(modelClue(this.props), { force: true })
+    const filter = {filterKeys:this.props.searchFields, filterValue: this.props.keyword}
+    this.props.loadModels(modelClue({ ...this.props }), { force: true })
   }
 
   componentDidUpdate(prevProps) {
-    if (this.props.page !== prevProps.page) {
-      this.props.loadModels(modelClue(this.props), { force: true })
+    if (this.props.page !== prevProps.page || (this.props.searchFields && this.props.keyword !== prevProps.keyword)) {
+      const filter = {filterKeys:this.props.searchFields, filterValue: this.props.keyword}
+      this.props.loadModels(modelClue({ ...this.props, filter }), { force: true })
+      console.log(this.props.models?.data);
     }
   }
 
