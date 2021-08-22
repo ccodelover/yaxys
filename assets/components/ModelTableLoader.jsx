@@ -28,7 +28,7 @@ export default class ModelTableLoader extends Component {
     url: PropTypes.oneOfType([PropTypes.string, PropTypes.func]),
     onDelete: PropTypes.func,
     deletedHash: PropTypes.object,
-    searchFields: PropTypes.object,
+    searchFields: PropTypes.arrayOf(PropTypes.string),
     deletedKey: PropTypes.string,
   }
 
@@ -57,7 +57,7 @@ const modelClue = props => ({
   sort: { id: 1 },
   limit: props.limit,
   skip: props.page * props.limit,
-  filter: props.filter,
+  filter: props.searchFields?.length > 0 && props.keyword ? {filterKeys:props.searchFields, filterValue: props.keyword} : undefined,
   ...props.additionalClueProperties,
 })
 const modelSelector = YaxysClue.selectors.byClue(modelClue)
@@ -87,21 +87,18 @@ class ModelTableLoaderPage extends Component {
     deletedHash: PropTypes.object,
     deletedKey: PropTypes.string,
     page: PropTypes.number,
-    searchFields: PropTypes.object,
+    searchFields: PropTypes.arrayOf(PropTypes.string),
     keyword: PropTypes.string,
     onChangePage: PropTypes.func,
   }
 
   componentDidMount() {
-    const filter = {filterKeys:this.props.searchFields, filterValue: this.props.keyword}
     this.props.loadModels(modelClue({ ...this.props }), { force: true })
   }
 
   componentDidUpdate(prevProps) {
-    if (this.props.page !== prevProps.page || (this.props.searchFields && this.props.keyword !== prevProps.keyword)) {
-      const filter = {filterKeys:this.props.searchFields, filterValue: this.props.keyword}
-      this.props.loadModels(modelClue({ ...this.props, filter }), { force: true })
-      console.log(this.props.models?.data);
+    if (this.props.page !== prevProps.page || this.props.searchFields && this.props.keyword !== prevProps.keyword) {
+      this.props.loadModels(modelClue({ ...this.props }), { force: true })
     }
   }
 
