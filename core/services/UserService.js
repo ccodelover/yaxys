@@ -61,7 +61,18 @@ module.exports = {
   async singleCredentialFindMiddleware(ctx, next) {
     await next()
     const userIds = ctx.body.map(user => user.id)
-    const credentials = await yaxys.db.find(ctx.trx, "credential", { user: userIds })
+    // const credentials = await yaxys.db.find(ctx.trx, "credential", { user: userIds })
+
+    let credentials;
+    if(ctx.query.filter) {
+      credentials = await yaxys.db.find(ctx.trx, "credential", { search: JSON.stringify({filterKeys:['code'], filterValue:JSON.parse(ctx.query.filter).filterValue}) })
+    } else {
+      credentials = await yaxys.db.find(ctx.trx, "credential")
+    }
+    const cUserIds = credentials.map((c) => c.user);
+    const uIds = [...userIds, ...cUserIds].splice(0, 20);
+    let users = await yaxys.db.find(ctx.trx, 'user', {id: [...uIds]}, {populate: ctx.query.populate.split(',')})
+    credentials = await yaxys.db.find(ctx.trx, "credential", { user: uIds })
 
     const hash = {}
     for (const credential of credentials) {
@@ -71,10 +82,11 @@ module.exports = {
       }
     }
 
-    for (const user of ctx.body) {
+    for (const user of users) {
       if (hash[user.id]) {
         user.credentialCode = hash[user.id].code
       }
     }
+    ctx.body = users;
   },
 }
